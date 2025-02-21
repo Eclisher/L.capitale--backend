@@ -36,4 +36,5 @@ public class ContextMessasgeService {
                 })
                 .orElseThrow(() -> new RuntimeException("Message  avec ces informations: " +contextMessageDetails+" avec l'id : " +id+"n'existe pas "));
     }
+
 }

@@ -10,6 +10,7 @@ import java.util.Optional;
 @Service
 public class AnnonceService {
 
+
     @Autowired
     private AnnonceRepository annonceRepository;
 
@@ -28,12 +29,13 @@ public class AnnonceService {
     public void deleteAnnonce(Long id) {
         annonceRepository.deleteById(id);
     }
+
     public Annonce updateAnnonce(Long id, Annonce annonceDetails) {
         return annonceRepository.findById(id)
                 .map(annonce -> {
                     annonce.setTitre(annonceDetails.getTitre());
                     annonce.setDescription(annonceDetails.getDescription());
-                    annonce.setImageUrl(annonceDetails.getImageUrl());
+                    annonce.setImageUrls(annonceDetails.getImageUrls()); // ✅ Correction ici
                     annonce.setDateAnnonce(annonceDetails.getDateAnnonce());
                     annonce.setDisponible(annonceDetails.isDisponible());
                     annonce.setNumeroTelephone(annonceDetails.getNumeroTelephone());

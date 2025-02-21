@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/message")
+@CrossOrigin(origins = "http://localhost:5173")
 public class ContextMessageController {
     @Autowired
     private ContextMessasgeService contextMessasgeService;
@@ -28,4 +29,16 @@ public class ContextMessageController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
+    @PostMapping
+    public ResponseEntity<?> addMessage(@RequestBody ContextMessage contextMessage) {
+        try {
+            ContextMessage savedMessage = contextMessasgeService.saveMessage(contextMessage);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedMessage);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de l'enregistrement du message.");
+        }
+    }
+
+
+
 }

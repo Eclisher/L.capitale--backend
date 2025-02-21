@@ -2,6 +2,7 @@ package L.capitale.L.capitale.Controller;
 
 import L.capitale.L.capitale.Entity.Annonce;
 import L.capitale.L.capitale.Service.AnnonceService;
+import L.capitale.L.capitale.Service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
@@ -9,58 +10,69 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.security.GeneralSecurityException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/annonces")
 @CrossOrigin(origins = "http://localhost:5173")
 public class AnnonceController {
-
     @Autowired
     private AnnonceService annonceService;
+    @Autowired
+    private ImageService imageService;
 
-    // Récupérer toutes les annonces
     @GetMapping
     public List<Annonce> getAllAnnonces() {
         return annonceService.findAll();
     }
-
-    // Ajouter une annonce
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> ajouterAnnonce(
-            @RequestParam("titre") String titre,
-            @RequestParam("description") String description,
-            @RequestParam("date_annonce") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateAnnonce,
-            @RequestParam(value = "disponible", required = false, defaultValue = "true") boolean disponible,
-            @RequestParam(value = "numero_telephone", required = false) String numeroTelephone,
-            @RequestParam(value = "email", required = false) String email,
-            @RequestParam(value = "image", required = true) MultipartFile image
-    ) throws IOException {
-        String imageUrl = null;
-        if (image != null && !image.isEmpty()) {
-            String uploadDir = "uploads/";
-            File uploadPath = new File(uploadDir);
-            if (!uploadPath.exists()) uploadPath.mkdirs();
-
-            String imagePath = uploadDir + image.getOriginalFilename();
-            Files.copy(image.getInputStream(), Paths.get(imagePath), StandardCopyOption.REPLACE_EXISTING);
-            imageUrl = imagePath;
-        }
-
-        Annonce annonce = new Annonce(titre, description, imageUrl, dateAnnonce, disponible, numeroTelephone, email);
-        annonceService.saveAnnonce(annonce);
-
-        return ResponseEntity.ok("Annonce ajoutée avec succès !");
+    @GetMapping("/{id}")
+    public ResponseEntity<Annonce> getAnnonceById(@PathVariable Long id) {
+        return annonceService.findById(id)
+                .map(annonce -> ResponseEntity.ok().body(annonce))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Annonce non trouvée"));
     }
 
-    // Supprimer une annonce
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Annonce createAnnonce(@RequestParam String titre,
+                                 @RequestParam String description,
+                                 @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateAnnonce,
+                                 @RequestParam boolean disponible,
+                                 @RequestParam String numeroTelephone,
+                                 @RequestParam String email,
+                                 @RequestPart List<MultipartFile> images) throws IOException, GeneralSecurityException {
+        if (images.isEmpty()) {
+            throw new IllegalArgumentException("Au moins une image est requise");
+        }
+
+        String folderId = "1IemkVxVkZphQAAi6PfA4s_u7twwa34Cy";
+        List<String> imageUrls = images.stream()
+                .map(image -> {
+                    try {
+                        return imageService.uploadImage(image, folderId);
+                    } catch (IOException | GeneralSecurityException e) {
+                        throw new RuntimeException("Erreur lors de l'upload de l'image", e);
+                    }
+                })
+                .collect(Collectors.toList());
+
+        Annonce annonce = new Annonce();
+        annonce.setTitre(titre);
+        annonce.setDescription(description);
+        annonce.setDateAnnonce(dateAnnonce != null ? dateAnnonce : LocalDate.now());
+        annonce.setDisponible(disponible);
+        annonce.setNumeroTelephone(numeroTelephone);
+        annonce.setEmail(email);
+        annonce.setImageUrls(imageUrls);
+
+        return annonceService.saveAnnonce(annonce);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAnnonce(@PathVariable Long id) {
         try {
