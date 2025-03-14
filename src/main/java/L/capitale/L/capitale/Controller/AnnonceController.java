@@ -1,9 +1,11 @@
+
 package L.capitale.L.capitale.Controller;
 
 import L.capitale.L.capitale.Entity.Annonce;
 import L.capitale.L.capitale.Service.AnnonceService;
 import L.capitale.L.capitale.Service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,17 +22,23 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/annonces")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "${frontend.url}")
 public class AnnonceController {
+
     @Autowired
     private AnnonceService annonceService;
+
     @Autowired
     private ImageService imageService;
+
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     @GetMapping
     public List<Annonce> getAllAnnonces() {
         return annonceService.findAll();
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<Annonce> getAnnonceById(@PathVariable Long id) {
         return annonceService.findById(id)

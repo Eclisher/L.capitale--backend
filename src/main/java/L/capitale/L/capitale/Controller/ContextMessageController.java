@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/message")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "${frontend.url}")
 public class ContextMessageController {
     @Autowired
     private ContextMessasgeService contextMessasgeService;
@@ -20,6 +20,7 @@ public class ContextMessageController {
     public List<ContextMessage> getAllMessages() {
         return contextMessasgeService.findAll();
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMessage(@PathVariable Long id) {
         try {
@@ -29,6 +30,7 @@ public class ContextMessageController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
+
     @PostMapping
     public ResponseEntity<?> addMessage(@RequestBody ContextMessage contextMessage) {
         try {
